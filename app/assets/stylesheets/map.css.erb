@@ -1,0 +1,328 @@
+// Place all the styles related to the map controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: http://sass-lang.com/
+
+/*CSS DEL EJEMPLO DEL LIBRO*/
+/*CSS DEL PROYECTO DE GRADO!!*/
+/*http://jestudio.cl/blog/uso-de-la-propiedad-float-y-clear-css/*/
+/*It Works for IE, for not showing scroll sidebar*/
+html
+{
+  overflow: hidden;
+}
+
+html, body
+{
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+#content_up
+{
+  margin-bottom: 15px;
+  position: relative;
+  margin-right: 300px;
+}
+
+#toolbar-wrapper
+{
+  position: relative;
+  margin-right: 300px;
+}
+
+#toolbar
+{
+  top: 10px;
+  position: relative;
+  background: #f29400;
+  width: 100%;
+  right: 20px;
+  left: 10px;
+  height: 90px;
+  border: 1px solid black;
+}
+
+#toolbar
+{
+background-image: url('/images/mederutas.jpg');
+background-repeat: repeat-x;
+}
+
+/*Ayuda inicial al usuario para el manejo de la aplicación*/
+#explain
+{
+  position: absolute;
+  width: 273px;
+  margin-left: 16px;
+  text-align: left;
+  top: 122px;
+  margin-top: 2px;
+  font-family: Trebuchet MS, serif;
+  font-size: 14px;
+  color: black;
+  padding: 4px;
+  background: #F9A910;
+  border: 1px solid black;
+}
+
+a.normal_text:visited {
+  color: black;
+  font-style: italic
+}
+
+/*Si lo pongo así, no me genera el underline*/
+a.normal_text:visited, a.normal_text:active
+{
+  text-decoration: none
+}
+
+
+/*MAP*/
+#content
+{
+  margin-top: 5px;
+  height: 84%;
+  float: inherit;
+  position: relative;
+}
+
+#map-wrapper
+{
+  position: relative;
+  /*height:100%;*/
+}
+
+#map-wrapper
+{
+  margin-right: 300px; /*Este es el tamaño donde va a ir el toolbar*/
+/*margin-top: 50px; Si pongo margin-bottom chrome pone el mapa debajo.*/
+}
+
+#map
+{
+  position: absolute;
+  top: 0;
+  right: 20px;
+  left: 10px;
+  width: 100%;
+  height: 80%;
+  border: 1px solid #aaa
+}
+/*Fin de CSS para todo lo referente al mapa*/
+
+/*Panel derecho donde va a ir la explicación de la ruta */
+#sidebar
+{
+  position: absolute;
+  top: 0px;
+  bottom:10px;
+  width: 286px;
+  height: 100%;
+  overflow: auto;/*THIS IS FOR SCROLL*/
+  right: 10px;
+  top: 24px;
+}
+
+#sidebar
+{
+  right: 0px;
+  display: block; /*The element will generate a block box (a line break before and after the element)*/
+}
+
+#sidebar p {
+  margin: 10px;
+}
+
+#sidebar ul#sidebar-list li a, .buses-checkbox
+{
+  display: block;
+  border: 1px solid #ddd;
+  background: #CED1D7;
+  margin: 3px;
+  margin-left: 2px;
+  padding: 4px;
+  font-family: Trebuchet MS, serif;
+  font-size: 12px;
+  text-decoration: none;
+  color: #444;
+}
+
+#sidebar ul#sidebar-list li.current a, #sidebar ul#sidebar-bus-list li.current
+{
+  background-color: #4F5D74;
+  border: 1px solid white;
+  border-left-width: 3px;
+  padding-left: 2px;
+  font-size:14px;
+  font-family: Trebuchet MS, serif;
+  color: white;
+}
+
+#sidebar ul#sidebar-list li a:hover, #sidebar ul#sidebar-bus-list li a:hover
+{
+  background: white;
+  color: #555;
+}
+
+
+#sidebar ul#sidebar-list li a strong, #sidebar ul#sidebar-bus-list li a strong
+{
+  display: block;
+}
+
+#sidebar ul#sidebar-list li a span, #sidebar ul#sidebar-bus-list li a span
+{
+  font-style: italic;
+  font-size: 7px;
+}
+
+#sidebar ul#sidebar-list, #sidebar ul#sidebar-bus-list
+{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/*List item inicial antes de aparecer la explicación de la ruta y del bus*/
+li.route-explain
+{
+  font-family: Trebuchet MS, serif;
+  color: black;
+  padding: 4px;
+  font-size: 12px;
+  background: #F9A910;
+  margin-left: 2px;
+  margin-top: 2px;
+  margin-right: 2px;
+  border: 1px solid black
+}
+
+/*Headers de la explicación de la ruta a pie y la ruta de bus*/
+b.header
+{
+  font-family: Trebuchet MS, serif;
+  color: black;
+  font-size: 14px;
+}
+
+/*Tabla que va en las estadisticas de la ruta a pie*/
+table
+{
+  border-collapse: collapse;
+}
+td
+{
+  text-align: left;
+  width: 50%;
+}
+
+
+/*MENU DESPLEGABLE CON CLICK DERECHO*/
+.context
+{
+  font-family: Trebuchet MS, serif;
+  text-decoration: none;
+  color: black;
+  padding: 3px;
+  font-size: 13px;
+  z-index: 1;
+}
+
+
+/*Background color para el context menu cuando se pone el curso sobre un item*/
+a:hover div
+{
+  background: #CED1D7;
+}
+
+/*Especificacion de posicion y tamaño donde va a ir el #inputArea*/
+#inputBoxes
+{
+  position: absolute;
+  width: 300px;
+  height: 120px;
+  right: -300px;
+  top: 10px;
+  z-index: 1;
+}
+
+/*Especificaciones esteticas del inputArea*/
+#inputArea
+{
+  position: absolute;
+  left: 16px;
+  padding: 4px;
+  margin-right: 1px;
+  font-family: Trebuchet MS, serif;
+  font-size: 14px;
+  color: #FFFFFF;
+  background-color: #4F5D74;
+  height: 115px;
+
+}
+
+/*Especificacion unicamente para los input text*/
+#inputArea input[type="text"], #inputArea textarea
+{
+  font-family: Trebuchet MS, serif;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  margin-left: 8px;
+  margin-right: 50px;
+  padding: 4px;
+  border: solid 1px #85b1de;
+  border: 1px solid black
+}
+
+
+/*Tamaño de los iconos que van en el inputArea*/
+.icon
+{
+  width: 20px;
+  height: 32px;
+  float: left;
+  clear: both;
+}
+
+
+/*Sirve para alinear los labels y el input text*/
+label
+{
+  display: block;
+  width: 50px;
+  float: left;
+  margin: 2px 4px 6px 4px;
+  text-align: right;
+}
+
+/*Alinea los botones del inputArea http://cssbutton.com/forms/*/
+.button
+{
+  border: none;
+  margin-left: 8px;
+  padding: 2px 8px;
+}
+
+#footer
+{
+  height: 20px;
+  width: 99%;
+  bottom: 2px;
+  right: 20px;
+  left: 10px;
+  clear:both;
+  position: absolute;
+  color: white;
+  border: 1px solid black;
+  text-align: center;
+  font-family: Trebuchet MS, serif;
+  background: #4F5D74;
+  font-size: 12px;
+  z-index: -1;
+}
+
+.form_button {
+  width: 120px;
+}
