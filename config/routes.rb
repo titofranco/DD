@@ -1,4 +1,8 @@
 DD::Application.routes.draw do
+
+#  get "map" => "map", :action => "driving_directions", :as => "driving_directions"
+  root :to => 'map#driving_directions'
+
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
