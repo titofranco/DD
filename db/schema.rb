@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120718154611) do
+ActiveRecord::Schema.define(:version => 20120718155552) do
 
   create_table "roadmaps", :force => true do |t|
     t.string   "way_type",     :limit => 13
@@ -38,5 +38,21 @@ ActiveRecord::Schema.define(:version => 20120718154611) do
   add_index "roadmaps", ["lat_start"], :name => "index_roadmaps_on_lat_start"
   add_index "roadmaps", ["long_end"], :name => "index_roadmaps_on_long_end"
   add_index "roadmaps", ["long_start"], :name => "index_roadmaps_on_long_start"
+
+  create_table "street_relations", :force => true do |t|
+    t.integer  "roadmap_id",                                         :null => false
+    t.integer  "roadmap_related_id",                                 :null => false
+    t.decimal  "lat_start",          :precision => 15, :scale => 10, :null => false
+    t.decimal  "long_start",         :precision => 15, :scale => 10, :null => false
+    t.decimal  "lat_end",            :precision => 15, :scale => 10, :null => false
+    t.decimal  "long_end",           :precision => 15, :scale => 10, :null => false
+    t.decimal  "distance_meters",    :precision => 15, :scale => 10, :null => false
+    t.integer  "stretch_type",                                       :null => false
+    t.datetime "created_at",                                         :null => false
+    t.datetime "updated_at",                                         :null => false
+  end
+
+  add_index "street_relations", ["roadmap_id", "roadmap_related_id"], :name => "index_street_relations_on_roadmap_id_and_roadmap_related_id", :unique => true
+  add_index "street_relations", ["roadmap_related_id"], :name => "index_street_relations_on_roadmap_related_id"
 
 end
