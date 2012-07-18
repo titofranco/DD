@@ -1,7 +1,6 @@
 class MapController < ApplicationController
 
   include SidePannel
-  layout "standar"
 
   def find_route
     lat_start, long_start = params[:initial_point].split(/,/)
