@@ -5,6 +5,8 @@ gem "mysql2", "~> 0.3.6"
 gem 'json'
 gem 'jquery-rails'
 gem "algorithms"
+# Used in command line app
+gem "open4"
 
 # Gems used only for assets and not required
 # in production environments by default.
