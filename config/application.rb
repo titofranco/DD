@@ -58,3 +58,8 @@ module DD
     config.assets.version = '1.0'
   end
 end
+
+require 'dijkstra/dijkstra'
+require 'dijkstra/street'
+require 'dijkstra/haversine'
+require 'dijkstra/parser'
