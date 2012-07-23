@@ -22,13 +22,12 @@ class MapController < ApplicationController
       bus_explain = nil
 
       #new controller
-      bus_route = BusesRoute.get_bus_route(closest_init, closest_final)
-      info_bus = BusesRoute.parser_route_bus(bus_route)
-      if !info_bus.empty?
-        bus_explain = SidePannel.explainBusRoute(info_bus)
+      bus_route = BusesRoute.find_route(closest_init, closest_final)
+      unless bus_route.empty?
+        bus_explain = SidePannel.explainBusRoute(bus_route)
       end
 
-      res = {:success => true,  :content => path[:info_path], :bus => info_bus, :route_explain => route_explain, :bus_explain => bus_explain}
+      res = {:success => true,  :content => path[:info_path], :bus => bus_route, :route_explain => route_explain, :bus_explain => bus_explain}
       render :text => res.to_json
     end
   end
