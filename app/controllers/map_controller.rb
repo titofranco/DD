@@ -3,8 +3,8 @@ class MapController < ApplicationController
   include SidePannel
 
   def find_route
-    lat_start, long_start = params[:initial_point].split(/,/)
-    lat_end, long_end = params[:end_point].split(/,/)
+    lat_start, long_start = params[:start_point].split(',')
+    lat_end, long_end = params[:end_point].split(',')
 
     path = Roadmap.get_path(lat_start, long_start, lat_end, long_end)
 

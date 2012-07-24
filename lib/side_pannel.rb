@@ -197,8 +197,8 @@ module SidePannel
 
       if first_node
         explain +=
-          '<li id=sidebar-item-' + i.to_s + ' >
-             <a href="#" onclick="javascript:focusPoint(' + i.to_s + ')">' +
+          '<li class=sidebar-item>
+             <a href="#" data-index=' + i.to_s + '>' +
              j.to_s + ". Dirigete en dirección
              <span class='b'>" + route[i][:direction] + "</span> hacia la
              <span>" + route[i][:way_type_b] +  " " + route[i][:street_name_b] +
@@ -211,10 +211,10 @@ module SidePannel
         turn = eval_direction(prev_dir, curr_dir)
 
         explain +=
-          '<li id=sidebar-item-' + i.to_s+' >
-             <a href="#" onclick="javascript:focusPoint(' + i.to_s + ')">' +
+          '<li class=sidebar-item>
+             <a href="#" data-index=' + i.to_s + '>' +
              j.to_s + ". Voltear <span class='b'> " + turn + "</span> por
-               <span class='b'>" + route[i][:way_type_b] + " " + route[i][:street_name_b] + "</span>"
+             <span class='b'>" + route[i][:way_type_b] + " " + route[i][:street_name_b] + "</span>"
 
         if route[i][:has_relation]
           intersection = route[i][:street_name_b].index('-')
@@ -235,7 +235,7 @@ module SidePannel
       elsif prev_stretch_type.eql?("3") and curr_stretch_type.eql?("2") and metro_station
 
         explain +=
-          '<li id=sidebar-item-' + i.to_s + ' >
+          '<li class=sidebar-item>
              <a href="#" onclick="javascript:focusMetro(' + route[i-1][:related_id] + ')">' +
              j.to_s + ". Ve de la estación <span class='b'> " + route[i-1][:common_name_a]
         j = j+1
@@ -251,8 +251,8 @@ module SidePannel
       elsif prev_stretch_type.eql?("3") and curr_stretch_type.eql?("4")
 
         explain +=
-          '<li id=sidebar-item-' + i.to_s + ' >
-            <a href="#" onclick="javascript:focusPoint(' + i.to_s + ')">' +
+          '<li class=sidebar-item>
+             <a href="#" data-index=' + i.to_s + '>' +
             j.to_s + ". Baja de la estación " + route[i-1][:common_name_a] +
             " dirigete por el <span class='b'> " + route[i][:common_name_b] +  " " +
           route[i][:street_name_a] + " (metros:" + route[i][:distance] + ")</span>
@@ -282,15 +282,15 @@ module SidePannel
       end
 
       explain +=
-        '<li id=sidebar-item-' + (i+1).to_s + ' >' +
-          '<a href="#" onclick="javascript:focusPoint('+(i+1).to_s+')">' + final + '
+        '<li class=sidebar-item>' +
+         '<a href="#" data-index=' + (i+1).to_s + '>' + final + '
           </a>
         </li>'
     else
       explain +=
-        '<li id=sidebar-item-' + 0 + ' >
-          <a href="#" onclick="javascript:focusPoint('+ 0 +')">
-          1. Dirigete en dirección <span class="b">' + route[i][:direction] + "</span>
+        '<li class=sidebar-item>
+           <a href="#" data-index=0>' +
+          '1. Dirigete en dirección <span class="b">' + route[i][:direction] + "</span>
           hacia la <span class='b'>" + route[i][:way_type_b] +  " " + route[i][:street_name_b] + "</span>
           hasta llegar a tu lugar de destino (metros: " + distance(i + 1, route) + ")</span>
           </a>
@@ -324,11 +324,11 @@ module SidePannel
        </div>"
     buses.each do |bus|
       explain +=
-        '<span class=buses-checkbox>
-           <li id=sidebar-item-bus' + bus.to_s + '>
-             <input type="checkbox" name="chk' + bus.to_s +
-             '"onClick="javascript:drawSelectedPolyline_bus('"this," + bus.to_s + ')">' +
-             " Ruta numero " + bus.to_s +
+        "<span class=buses-checkbox>
+           <li class=sidebar-item-bus>
+             <input type='checkbox' data-bus_id=" + bus.to_s +
+#             '"onClick="javascript:drawSelectedPolyline_bus('"this," + bus.to_s + ')">' +
+              "> Ruta numero " + bus.to_s +
            "</li>
         </span>"
     end

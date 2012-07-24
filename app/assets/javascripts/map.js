@@ -9,130 +9,91 @@
 // http://econym.org.uk/gmap/
 // Arrow function: http://econym.org.uk/gmap/arrows.htm
 // Cliente location: http://designshack.co.uk/articles/javascript/detecting-location-using-google-ajax-api
-
 var map;
-//Guardan las coordenadas de las rutas a pintar
-var latlng_street = [];
-var latlng_metro = [];
-//Guarda todos los datos enviados desde map_controller
-var infoRouteHash = {};
-var buses_hash = {};
-var overlay_buses_hash = {};
-//Variables que guardan la lat-lng inicial-final de los markers
-var init_lat;
-var init_lng;
-var end_lat;
-var end_lng;
-var size_infoHash; /*Funcion para obtener el tamaño de la ventana*/
+var bus;
+var route;
 
-function windowHeight() {
-    //Standard browsers (Mozilla,Safari,etc.)
-    if (self.innerHeight) return self.innerHeight;
-    // IE 6
-    if (document.documentElement && document.documentElement.clientHeight) return y = document.documentElement.clientHeight;
-    //IE 5
-    if (document.body) return document.body.clientHeight;
-    //Just in case
-    return 0;
-}
-
-/* The offsetHeight and offsetWidth properties are provided by the browser,
- and return—in pixels—the dimensions of their element, including any padding.*/
-/* Redimensiona el tamño del mapa y de la barra lateral*/
-
-function handleResize() {
-    var height = windowHeight() - document.getElementById('toolbar').offsetHeight - 45;
-    document.getElementById('map').style.height = height + 'px';
-    document.getElementById('sidebar').style.height = (height - 18) + 'px';
-}
-
-
-//Valida y si todo está correcto, procede a hacer la llama asincrona al server
-
-
-function validar(form) {
-    var validate = checkform(form);
-    if (validate) {
-        findRoute();
-    }
-}
-
-//Valida que los campos no estén vacios
-
-
-function checkform(form) {
-    if (form.initial_point.value == "" && form.end_point.value == "") {
-        alert("Debe elegir punto inicial y punto final");
-        return false;
-    } else if (form.initial_point.value == null || form.initial_point.value == "") {
-        form.initial_point.focus();
-        alert("Debe elegir un punto inicial");
-        return false;
-    } else if (form.end_point.value == null || form.end_point.value == "") {
-        form.end_point.focus();
-        alert("Debe elegir un punto final");
-        return false;
-    }
-    return true;
-}
-
-
-function init(){
+$(document).ready(function() {
+    window.onresize = handleResize;
     handleResize();
-    if (GBrowserIsCompatible) {
-        //6.2201673770;-75.6076627160; casa de joan
+    map = new Map();
+    map.initialize();
+    bus = new Bus();
+    route = Route();
+
+    /* The offsetHeight and offsetWidth properties are provided by the browser,
+     and return—in pixels—the dimensions of their element, including any padding.*/
+    /* Redimensiona el tamño del mapa y de la barra lateral*/
+    function handleResize() {
+        var height = windowHeight() - $('#toolbar')[0].offsetHeight - 45;
+        $('#map').height(height);
+        $('#sidebar').height(height - 18);
+    }
+
+    function windowHeight() {
+        //Standard browsers (Mozilla,Safari,etc.)
+        if (self.innerHeight) return self.innerHeight;
+        // IE 6
+        if (document.documentElement && document.documentElement.clientHeight) return y = document.documentElement.clientHeight;
+        //IE 5
+        if (document.body) return document.body.clientHeight;
+        //Just in case
+        return 0;
+    }
+
+});
+
+var Map = function() {
+
+    var self = this;
+    var obj;
+    var lat;
+    var lng;
+    //Variables utilizadas para limitar a que se cree sólo un marker
+    var countInitial = 0;
+    var countFinal = 0;
+    var point;
+    var startMarker;
+    var endMarker;
+
+    self.initialize = initialize;
+    self.obj = obj;
+    self.startMarker = startMarker;
+    self.endMarker = endMarker;
+
+    function initialize() {
+        if (GBrowserIsCompatible) {
+            obj = new GMap2(document.getElementById("map"));
+            customizeUI();
+            customizeContextMenu();
+        } else {
+            alert("Your Browser Is Not Compatible");
+        }
+    }
+
+    function customizeUI() {
+        //6.2201673770;-75.6076627160; Joan's home
         var centerLatitude = 6.27488;
         var centerLongitude = -75.56817;
-        var startZoom = 16;
-        var lat;
-        var lng;
-        //Variables utilizadas para limitar a que se cree sólo un marker
-        var countInitial = 0;
-        var countFinal = 0;
-        var point;
-
-        map = new GMap2(document.getElementById("map"));
+        var startZoom = 15;
         //If ClientLocation was filled in by the loader, use that info instead
         /*if (google.loader.ClientLocation) {
          centerLatitude = google.loader.ClientLocation.latitude;
          centerLongitude = google.loader.ClientLocation.longitude;
          }
          */
-        map.setCenter(new GLatLng(centerLatitude, centerLongitude), startZoom);
-        map.setMapType(G_HYBRID_MAP);
-        map.setUIToDefault();
+        obj.setCenter(new GLatLng(centerLatitude, centerLongitude), startZoom);
+        //        obj.setMapType(G_HYBRID_MAP);
+        obj.setUIToDefault();
+    }
 
-        //Se crea el menu desplegable que se crea cuando se hace click derecho sobre el mapa
-        var contextmenu = createContextMenu();
-        map.getContainer().appendChild(contextmenu);
-
-        document.getElementById('initial_point_func').onclick = function () {
-            getInitialPoint();
-            return false;
-        };
-        document.getElementById('end_point_func').onclick = function () {
-            getFinalPoint();
-            return false;
-        };
-        document.getElementById('zoomin_func').onclick = function () {
-            zoomIn();
-            return false;
-        };
-        document.getElementById('zoomout_func').onclick = function () {
-            zoomOut();
-            return false;
-        };
-        document.getElementById('centerMap_func').onclick = function () {
-            setCenter();
-            return false;
-        };
-        document.getElementById('clearMarkers_func').onclick = function () {
-            clearMarkers();
-            return false;
-        };
+    //It creates a context menu when user tap right click
+    function customizeContextMenu() {
+        var contextMenu = createContextMenu();
+        obj.getContainer().appendChild(contextMenu);
 
         //Evento para desplegar menú cuando se hace click izquierdo
-        GEvent.addListener(map, "singlerightclick", function (pixel, tile) {
+        GEvent.addListener(obj, "singlerightclick", function (pixel, tile) {
             // store the "pixel" info in case we need it later
             // adjust the context menu location if near an egde
             // create a GControlPosition
@@ -141,307 +102,240 @@ function init(){
             var x = pixel.x;
             var y = pixel.y;
 
-            if (x > map.getSize().width - 120) {
-                x = map.getSize().width - 120;
+            if (x > obj.getSize().width - 120) {
+                x = obj.getSize().width - 120;
             }
-            if (y > map.getSize().height - 100) {
-                y = map.getSize().height - 100;
+
+            if (y > obj.getSize().height - 100) {
+                y = obj.getSize().height - 100;
             }
+
             var pos = new GControlPosition(G_ANCHOR_TOP_LEFT, new GSize(x, y));
-            pos.apply(contextmenu);
-            contextmenu.style.visibility = "visible";
-            point = map.fromContainerPixelToLatLng(clickedPixel);
+            pos.apply(contextMenu);
+            $("#contextMenu").show();
+            point = obj.fromContainerPixelToLatLng(clickedPixel);
             lat = point.lat();
             lng = point.lng();
-
         });
-
-        //Obtiene el punto inicial del field, crea el marker y lo habilita para que se pueda arrastrar
-
-
-        function getInitialPoint() {
-            if (countInitial == 0) {
-                initial_marker = new GMarker(point, {
-                    draggable: true
-                });
-                var init_icon = new GIcon();
-                init_icon.image = "http://www.google.com/mapfiles/dd-start.png";
-                init_icon.shadow = "http://www.google.com/mapfiles/shadow50.png";
-                init_icon.iconSize = new GSize(20, 34);
-                init_icon.iconAnchor = new GPoint(9, 34);
-                init_icon.shadowSize = new GSize(37, 34);
-                init_icon.infoWindowAnchor = new GPoint(24, 24);
-                initial_marker = new GMarker(point, {
-                    draggable: true,
-                    icon: init_icon
-                });
-                map.addOverlay(initial_marker);
-                //marker.setLatLng(new GLatLng(6.256648053,-75.602324565));
-                init_lat = lat;
-                init_lng = lng;
-                document.getElementById("initial_point").value = String(lat).substring(0, 7) +
-                    ',' + String(lng).substring(0, 9);
-                contextmenu.style.visibility = "hidden";
-                countInitial = 1;
-
-                GEvent.addListener(initial_marker, "dragend", function () {
-                    init_lat = initial_marker.getPoint().lat();
-                    init_lng = initial_marker.getPoint().lng();
-                    document.getElementById("initial_point").value = String(init_lat).substring(0, 7) +
-                        "," + String(init_lng).substring(0, 9);
-                });
-            }
-        }
-
-        //Obtiene el punto final del field, crea el marker y lo habilita para que se pueda arrastrar
-
-
-        function getFinalPoint() {
-            if (countFinal == 0) {
-                var final_icon = new GIcon();
-                final_icon.image = "http://www.google.com/mapfiles/dd-end.png";
-                final_icon.shadow = "http://www.google.com/mapfiles/shadow50.png";
-                final_icon.iconSize = new GSize(20, 34);
-                final_icon.iconAnchor = new GPoint(9, 34);
-                final_icon.shadowSize = new GSize(37, 34);
-                final_icon.infoWindowAnchor = new GPoint(24, 24);
-                final_marker = new GMarker(point, {
-                    draggable: true,
-                    icon: final_icon
-                });
-                // final_marker.setImage({url:'http://googlemapsbook.com/chapter4/StoreLocationMap/ronjonsurfshoplogo.png'});
-                map.addOverlay(final_marker);
-                end_lat = lat;
-                end_lng = lng;
-                document.getElementById("end_point").value = String(lat).substring(0, 7) + ',' +
-                    String(lng).substring(0, 9);
-                contextmenu.style.visibility = "hidden";
-                countFinal = 1;
-
-                GEvent.addListener(final_marker, "dragend", function () {
-                    end_lat = final_marker.getPoint().lat();
-                    end_lng = final_marker.getPoint().lng();
-                    document.getElementById("end_point").value = String(end_lat).substring(0, 7) +
-                        "," + String(end_lng).substring(0, 9);
-                });
-            }
-        }
-
-        //Aumenta el zoom al mapa
-        function zoomIn() {
-            map.zoomIn();
-            contextmenu.style.visibility = "hidden";
-        }
-
-        //Disminuye el zoom al mapa
-        function zoomOut() {
-            map.zoomOut();
-            contextmenu.style.visibility = "hidden";
-        }
-
-        //Centra el mapa
-        function setCenter() {
-            map.setCenter(point);
-        }
-
-        //Borra todos los overlays del mapa, es decir, la ruta,los markers, las flechas.
-        function clearMarkers() {
-            map.clearOverlays();
-            document.getElementById("initial_point").value = '';
-            document.getElementById("end_point").value = '';
-            countInitial = 0;
-            countFinal = 0;
-            contextmenu.style.visibility = "hidden";
-        }
 
         //Funcion para que se no muestre el menu desplegable si se hace click en otra parte del mapa
-        GEvent.addListener(map, 'click', function (overlay, latlng) {
-            contextmenu.style.visibility = "hidden";
+        GEvent.addListener(obj, 'click', function (overlay, latlng) {
+            $("#contextMenu").hide();
         });
-
-    } else {
-        alert("Your Browser Is Not Compatible");
     }
-}
 
-//Metodo que hace la llamada asincrona al controlador, pasando los parametros
-//correspondientes y evaluando la respuesta dada por este
+    //Crea el menú desplegable cuando se hace click derecho sobre el mapa
+    function createContextMenu() {
+        var menu = document.createElement("div");
+        menu.setAttribute('id', 'contextMenu');
+        menu.style.background = "#ffffff";
+        menu.style.border = "1px solid #8888FF";
+        menu.innerHTML =
+            '<a href="#" id="setStartPoint"><div class="context">Ruta desde aquí</div></a>'
+            +'<a href="#" id="setEndPoint"><div class="context">Ruta hasta aquí</div></a>'
+            +'<hr>'
+            +'<a href="#" id="zoomIn"><div class="context">Zoom In</div></a>'
+            +'<a href="#" id="zoomOut"><div class="context">Zoom Out</div></a>'
+            +'<a href="#" id="centerMap"><div class="context">Centrar mapa</div></a>'
+            +'<hr>'
+            +'<a href="#" id="clearMarkers"><div class="context">Reiniciar origen/destino </div></a>';
+        $("#contextMenu").hide();
+        return menu;
+    }
 
+    function createIcon(file) {
+        // endMarker.setImage({url:'http://googlemapsbook.com/chapter4/StoreLocationMap/ronjonsurfshoplogo.png'});
+        var icon = new GIcon();
+        icon.image = "http://www.google.com/mapfiles/" + file;
+        icon.shadow = "http://www.google.com/mapfiles/shadow50.png";
+        icon.iconSize = new GSize(20, 34);
+        icon.iconAnchor = new GPoint(9, 34);
+        icon.shadowSize = new GSize(37, 34);
+        icon.infoWindowAnchor = new GPoint(24, 24);
+        return icon;
+    }
 
-function findRoute() {
-    var init_lat_lng = init_lat + "," + init_lng;
-    var end_lat_lng = end_lat + "," + end_lng;
-    var bus;
-    var getVars = "?initial_point=" + init_lat_lng + "&end_point=" + end_lat_lng;
+    function createStartMarker() {
+        var icon = createIcon("dd-start.png");
+        startMarker = new GMarker(point, {
+            draggable: true,
+            icon: icon
+        });
+        obj.addOverlay(startMarker);
+    }
 
-    var request = GXmlHttp.create();
-    request.open('GET', 'map/find_route' + getVars, true);
-    request.onreadystatechange = function () {
-        if (request.readyState == 4) {
+    function startMarker() {
+        return startMarker;
+    }
 
-            var success = false;
-            var content = "Error contacting web service";
-            try {
-                res = eval("(" + request.responseText + ")");
-                content = res.content;
-                success = res.success;
-                bus = res.bus;
-                route_explain = res.route_explain;
-                bus_explain = res.bus_explain;
-            } catch (e) {
-                success = false;
-            }
-            if (!success) {
-                alert(content);
-                //Si se hace de nuevo una peticion y hay error entonces esconder panel
-                $('#sidebar').hide();
-                $('#explain').show();
-            } else {
-                $('#sidebar').show();
-                //Esconde la explicación de la aplicación
-                $('#explain').hide();
-                parseContent(content);
-                createSideBarPannel(route_explain);
-                if (bus == null || bus.length == 0) {
-                    $('#sidebar-bus-list').hide();
+    //Obtiene el punto inicial del field, crea el marker y lo habilita para que se pueda arrastrar
+    function getInitialPoint() {
+        if (countInitial == 0) {
+            createStartMarker();
+            fillCoordinates(lat, lng, 0);
+            $("#contextMenu").hide();
+            countInitial = 1;
+            GEvent.addListener(startMarker, "dragend", function () {
+                var latitude = startMarker.getPoint().lat();
+                var longitude = startMarker.getPoint().lng();
+                fillCoordinates(latitude, longitude, 0);
+            });
+        }
+    }
+
+    function createEndMarker() {
+        var icon = createIcon("dd-end.png");
+        endMarker = new GMarker(point, {
+            draggable: true,
+            icon: icon
+        });
+        obj.addOverlay(endMarker);
+    }
+
+    function endMarker() {
+        return endMarker;
+    }
+
+    //Obtiene el punto final del field, crea el marker y lo habilita para que se pueda arrastrar
+    function getFinalPoint() {
+        if (countFinal == 0) {
+            createEndMarker();
+            fillCoordinates(lat, lng, 1);
+            $("#contextMenu").hide();
+            countFinal = 1;
+            GEvent.addListener(endMarker, "dragend", function () {
+                var latitude = endMarker.getPoint().lat();
+                var longitude = endMarker.getPoint().lng();
+                fillCoordinates(latitude, longitude, 1);
+            });
+        }
+    }
+
+    function fillCoordinates(lat, lng, pos) {
+        var latitude = String(lat).substring(0, 7);
+        var longitude = String(lng).substring(0, 9);
+        var value = latitude + "," + longitude;
+        pos === 0 ? $("#start_point").val(value) : $("#end_point").val(value);
+    }
+
+    //Aumenta el zoom al mapa
+    function zoomIn() {
+        obj.zoomIn();
+        $("#contextMenu").hide();
+    }
+
+    //Disminuye el zoom al mapa
+    function zoomOut() {
+        obj.zoomOut();
+        $("#contextMenu").hide();
+    }
+
+    //Centra el mapa
+    function setCenter() {
+        obj.setCenter(point);
+    }
+
+    //Borra todos los overlays del mapa, es decir, la ruta,los markers, las flechas.
+    function clearMarkers() {
+        obj.clearOverlays();
+        countInitial = 0;
+        countFinal = 0;
+        $("#start_point").val('');
+        $("#end_point").val('');
+        $("#contextMenu").hide();
+    }
+
+    $('#setStartPoint').live('click', function() {
+        getInitialPoint();
+    });
+
+    $('#setEndPoint').live('click', function () {
+        getFinalPoint();
+    });
+
+    $('#zoomIn').live('click', function () {
+        zoomIn();
+    });
+
+    $('#zoomOut').live('click', function () {
+        zoomOut();
+    });
+
+    $('#centerMap').live('click', function () {
+        setCenter();
+    });
+
+    $('#clearMarkers').live('click', function () {
+        clearMarkers();
+    });
+
+    $("#form").submit(function() {
+        if($(".start_point").val() == "" || $(".end_point").val() == "") {
+            alert("Debe elegir punto inicial y punto final");
+            return false;
+        }
+        findRoute();
+        return false;
+    });
+
+    //Metodo que hace la llamada asincrona al controlador, pasando los parametros
+    //correspondientes y evaluando la respuesta dada por este
+    function findRoute() {
+        var startLatLng = $("#start_point").val();
+        var endLatLng = $("#end_point").val();
+        var q = "?start_point=" + startLatLng + "&end_point=" + endLatLng;
+        var request = GXmlHttp.create();
+
+        request.open('GET', 'map/find_route' + q, true);
+        request.onreadystatechange = function () {
+            if (request.readyState == 4) {
+
+                var success = false;
+                var content = "Error contacting web service";
+                try {
+                    res = eval("(" + request.responseText + ")");
+                    content = res.content;
+                    success = res.success;
+                    var busRoute = res.bus;
+                    var busExplain = res.bus_explain;
+                    var routeExplain = res.route_explain;
+
+                    clearExistingOverlays();
+                } catch (e) {
+                    success = false;
+                }
+                if (success) {
+                    route.initialize(content, routeExplain);
+                    if (busRoute == null || busRoute.length == 0) {
+                        $('#sidebar-bus-list').hide();
+                    } else {
+                        bus.initialize(busRoute, busExplain);
+                    }
                 } else {
-                    $('#sidebar-bus-list').show();
-                    parseContentBuses(bus);
-                    createBusesSidebar(bus_explain);
+                    alert(content);
+                    //Si se hace de nuevo una peticion y hay error entonces esconder panel
+                    $('#explain').show();
+                    $('#sidebar').hide();
+
                 }
             }
-        }
-    };
-    request.send(null);
-    return false;
-}
-
-
-function parseContentBuses(content,bus_explain) {
-    buses_hash = {};
-    var size = content.length-1;
-    for (var i = 0; i <= size; i++) {
-        var id = content[i].id;
-        var bus_id = content[i].bus_id;
-        var lat_start = content[i].lat_start;
-        var long_start = content[i].long_start;
-        var status = content[i].status;
-
-        buses_hash[i] = {
-            id: id,
-            bus_id: bus_id,
-            lat_start: lat_start,
-            long_start: long_start,
-            status: status
         };
+        request.send(null);
+        return false;
     }
-    //Agrego este ultimo registro falso, ya que debo recorrer el arreglo y comparar el siguiente id del bus
-    /*   buses_hash[size] = {
-     id: -1,
-     bus_id: 99999,
-     lat_start: content[size - 1].lat_start,
-     long_start: content[size - 1].long_start,
-     status: "inactive"
-     };*/
-    //AssignRandomColor(size);
-    //addBusesSidebar(buses_hash);
-    createBusesOverlays(size);
-    //drawPolyline_bus(buses_hash);
-}
 
-//Obtiene el resultado enviado por el controlador, lo pone en un hash, luego llama al metodo
-//drawPolyline para pintar la ruta
-function parseContent(content) {
-
-    infoRouteHash = {};
-    latlng_street = [];
-    latlng_metro = [];
-    size = content.length;
-
-    for (var i = 0; i < size; i++) {
-        var id = content[i].id;
-        var lat_start = content[i].lat_start;
-        var long_start = content[i].long_start;
-        var lat_end = content[i].lat_end;
-        var long_end = content[i].long_end;
-        var stretch_type = content[i].stretch_type;
-        var way_type_a = content[i].way_type_a;
-        var street_name_a = content[i].street_name_a;
-        var prefix_a = content[i].prefix_a;
-        var common_name_a = content[i].common_name_a;
-        var distance = parseFloat(content[i].distance);
-        var label_a = content[i].label_a;
-        var way_type_b = content[i].way_type_b;
-        var street_name_b = content[i].street_name_b;
-        var prefix_b = content[i].prefix_b;
-        var label_b = content[i].label_b;
-        var common_name_b = content[i].common_name_b;
-        var bearing = parseFloat(content[i].bearing);
-        var direction = content[i].direction;
-        var new_direction = content[i].new_direction;
-        var related_id = content[i].related_id;
-        var has_relation = content[i].has_relation;
-
-        //getBearing(lat_start,long_start,lat_end,long_end);
-        infoRouteHash[i] = {
-            id: id,
-            lat_start: lat_start,
-            long_start: long_start,
-            lat_end: lat_end,
-            long_end: long_end,
-            stretch_type: stretch_type,
-            way_type_a: way_type_a,
-            street_name_a: street_name_a,
-            prefix_a: prefix_a,
-            common_name_a: common_name_a,
-            distance: distance,
-            label_a: label_a,
-            way_type_b: way_type_b,
-            street_name_b: street_name_b,
-            prefix_b: prefix_b,
-            label_b: label_b,
-            common_name_b: common_name_b,
-            bearing: bearing,
-            direction: direction,
-            related_id: related_id,
-            new_direction: new_direction,
-            has_relation: has_relation
-        };
-
-        //type 3: start of a metro station
-        if (stretch_type == '3') {
-            id_metro_related = id;
-            infoRouteHash[i].related_id = id_metro_related;
-        }
-        //type 2: metro station's path
-        if (stretch_type == '2') {
-            infoRouteHash[i].related_id = id_metro_related;
-        }
-
-        /* console.debug("\ni: "+i+ " el ID: " + id + " INIT: " + lat_start+"," + long_start +
-         " END: " + lat_end + "," + long_end + " BEARING: " + bearing + " DIRECTION: " + direction  +
-         " STREET_NAME_A: " + way_type_a + street_name_a +
-         " COMMON_A: " +common_name_a+ " STREET_NAME_B: "+ way_type_b + street_name_b + " STRETCH_TYPE: " + stretch_type+
-         " COMMON_B: " +common_name_b + " RELATED " +infoRouteHash[i].related_id + " DISTANCE: " + distance);
-         */
-        //Se pone en este array todas las coordenadas que se van a pintar
-        latlng_street.push(new GLatLng(lat_start, long_start));
-        if (parseInt(stretch_type) >= 2) {
-            latlng_metro.push(new GLatLng(lat_start, long_start));
-        }
-    }
-    //Se adiciona el ulitmo trayecto
-    latlng_street.push(new GLatLng(lat_end, long_end));
-
-    document.getElementById("initial_point").value = infoRouteHash[0].way_type_a + ' ' + infoRouteHash[0].street_name_a;
-    document.getElementById("end_point").value = way_type_b + ' ' + street_name_b;
     //Se eliminar los overlays existentes, en caso tal se haga otro llamado al controlador
-    clearExistingOverlays();
-    //Posiciona el init_marker y el end_marker en base a la coordenada más cercana que se encontró
-    setLatLngMarkers(infoRouteHash[0].lat_start, infoRouteHash[0].long_start, infoRouteHash[size - 1].lat_end, infoRouteHash[size - 1].long_end);
-    drawPolyline(latlng_street, latlng_metro);
-    size_infoHash = Object.size(infoRouteHash);
-}
+    function clearExistingOverlays() {
+        route.clearOverlays();
+        bus.clearOverlays();
+    }
+
+    function obj() {
+        return obj;
+    }
+
+    return self;
+};
 
 //Obtenido de http://stackoverflow.com/questions/5223/length-of-javascript-associative-array
 //Método para obtener el tamaño de un hash
@@ -454,11 +348,33 @@ Object.size = function (obj) {
 };
 
 
+//Valida y si todo está correcto, procede a hacer la llama asincrona al server
+//function validar(form) {
+//    var validate = checkform(form);
+//    if (validate) {
+//   }
 //}
-//Si el usuario redimensiona la página, el mapa y otros elementos se deben redimensionar
-window.onresize = handleResize;
-window.onload = handleResize;
-window.onload = init;
+
+//Valida que los campos no estén vacios
+/*
+ function checkform(form) {
+ if (form.initial_point.value == "" && form.end_point.value == "") {
+ alert("Debe elegir punto inicial y punto final");
+ return false;
+ } else if (form.initial_point.value == null || form.initial_point.value == "") {
+ form.initial_point.focus();
+ alert("Debe elegir un punto inicial");
+ return false;
+ } else if (form.end_point.value == null || form.end_point.value == "") {
+ form.end_point.focus();
+ alert("Debe elegir un punto final");
+ return false;
+ }
+ return true;
+ }
+ */
+
+//}
 //Pagina 9 capitulo 3 para retornar la latitud longitud del marker
 //overlay y latlng son variables ya definidas por google
 //allow the user to click the map to create a marker
