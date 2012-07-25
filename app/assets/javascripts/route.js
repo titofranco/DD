@@ -13,6 +13,8 @@ var Route = function() {
 
     self.initialize = initialize;
     self.clearOverlays = clearOverlays;
+    self.obj = obj;
+    self.objSize = objSize;
 
     function initialize(route, explain) {
         latLng = [];
@@ -189,6 +191,10 @@ var Route = function() {
         if (selectedPath) {map.obj().removeOverlay(selectedPath);}
         if (pin) {map.obj().removeOverlay(pin);}
         if (arrow) {map.obj().removeOverlay(arrow);}
+    }
+
+    function obj() {
+        return obj;
     }
 
     function objSize() {

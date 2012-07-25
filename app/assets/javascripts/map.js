@@ -265,8 +265,6 @@ var Map = function() {
                     res = eval("(" + request.responseText + ")");
                     content = res.content;
                     success = res.success;
-                    var busRoute = res.bus;
-                    var busExplain = res.bus_explain;
                     var routeExplain = res.route_explain;
                     clearExistingOverlays();
 
@@ -275,17 +273,39 @@ var Map = function() {
                 }
                 if (success) {
                     route.initialize(content, routeExplain);
-                    if (busRoute == null || busRoute.length == 0) {
-                        $('#sidebar-bus-list').hide();
-                    } else {
-                        bus.initialize(busRoute, busExplain);
-                    }
+                    findBusRoute();
                 } else {
                     alert(content);
                     //Si se hace de nuevo una peticion y hay error entonces esconder panel
                     $('#explain').show();
                     $('#sidebar').hide();
+                }
+            }
+        };
+        request.send(null);
+        return false;
+    }
 
+    function findBusRoute() {
+        var q = "?roadmap_id=" + route.obj()[0].roadmap_id + "," + route.obj()[route.objSize()-1].roadmap_id;
+        var request = GXmlHttp.create();
+        request.open('GET', 'map/find_bus_route' + q, true);
+        request.onreadystatechange = function () {
+            if (request.readyState == 4) {
+                var success = false;
+                var content = "Error contacting web service";
+                try {
+                    res = eval("(" + request.responseText + ")");
+                    success = res.success;
+                } catch (e) {
+                    success = false;
+                }
+                if (success) {
+                    var busRoute = res.bus;
+                    var busExplain = res.bus_explain;
+                    bus.initialize(busRoute, busExplain);
+                } else {
+                    $('#sidebar-bus-list').hide();
                 }
             }
         };
