@@ -60,6 +60,7 @@ var Map = function() {
     self.obj = obj;
     self.startMarker = startMarker;
     self.endMarker = endMarker;
+    self.randomColor = randomColor;
 
     function initialize() {
         if (GBrowserIsCompatible) {
@@ -89,7 +90,7 @@ var Map = function() {
 
     //It creates a context menu when user tap right click
     function customizeContextMenu() {
-        var contextMenu = createContextMenu();
+        var contextMenu = $("#contextMenu")[0];
         obj.getContainer().appendChild(contextMenu);
 
         //Evento para desplegar menú cuando se hace click izquierdo
@@ -124,25 +125,6 @@ var Map = function() {
         });
     }
 
-    //Crea el menú desplegable cuando se hace click derecho sobre el mapa
-    function createContextMenu() {
-        var menu = document.createElement("div");
-        menu.setAttribute('id', 'contextMenu');
-        menu.style.background = "#ffffff";
-        menu.style.border = "1px solid #8888FF";
-        menu.innerHTML =
-            '<a href="#" id="setStartPoint"><div class="context">Ruta desde aquí</div></a>'
-            +'<a href="#" id="setEndPoint"><div class="context">Ruta hasta aquí</div></a>'
-            +'<hr>'
-            +'<a href="#" id="zoomIn"><div class="context">Zoom In</div></a>'
-            +'<a href="#" id="zoomOut"><div class="context">Zoom Out</div></a>'
-            +'<a href="#" id="centerMap"><div class="context">Centrar mapa</div></a>'
-            +'<hr>'
-            +'<a href="#" id="clearMarkers"><div class="context">Reiniciar origen/destino </div></a>';
-        $("#contextMenu").hide();
-        return menu;
-    }
-
     function createIcon(file) {
         // endMarker.setImage({url:'http://googlemapsbook.com/chapter4/StoreLocationMap/ronjonsurfshoplogo.png'});
         var icon = new GIcon();
@@ -153,6 +135,20 @@ var Map = function() {
         icon.shadowSize = new GSize(37, 34);
         icon.infoWindowAnchor = new GPoint(24, 24);
         return icon;
+    }
+
+    //Obtiene el punto inicial del field, crea el marker y lo habilita para que se pueda arrastrar
+    function getInitialPoint() {
+        if (countInitial == 0) {
+            createStartMarker();
+            fillCoordinates(lat, lng, 0);
+            countInitial = 1;
+            GEvent.addListener(startMarker, "dragend", function () {
+                var latitude = startMarker.getPoint().lat();
+                var longitude = startMarker.getPoint().lng();
+                fillCoordinates(latitude, longitude, 0);
+            });
+        }
     }
 
     function createStartMarker() {
@@ -168,17 +164,16 @@ var Map = function() {
         return startMarker;
     }
 
-    //Obtiene el punto inicial del field, crea el marker y lo habilita para que se pueda arrastrar
-    function getInitialPoint() {
-        if (countInitial == 0) {
-            createStartMarker();
-            fillCoordinates(lat, lng, 0);
-            $("#contextMenu").hide();
-            countInitial = 1;
-            GEvent.addListener(startMarker, "dragend", function () {
-                var latitude = startMarker.getPoint().lat();
-                var longitude = startMarker.getPoint().lng();
-                fillCoordinates(latitude, longitude, 0);
+    //Obtiene el punto final del field, crea el marker y lo habilita para que se pueda arrastrar
+    function getFinalPoint() {
+        if (countFinal == 0) {
+            createEndMarker();
+            fillCoordinates(lat, lng, 1);
+            countFinal = 1;
+            GEvent.addListener(endMarker, "dragend", function () {
+                var latitude = endMarker.getPoint().lat();
+                var longitude = endMarker.getPoint().lng();
+                fillCoordinates(latitude, longitude, 1);
             });
         }
     }
@@ -196,43 +191,11 @@ var Map = function() {
         return endMarker;
     }
 
-    //Obtiene el punto final del field, crea el marker y lo habilita para que se pueda arrastrar
-    function getFinalPoint() {
-        if (countFinal == 0) {
-            createEndMarker();
-            fillCoordinates(lat, lng, 1);
-            $("#contextMenu").hide();
-            countFinal = 1;
-            GEvent.addListener(endMarker, "dragend", function () {
-                var latitude = endMarker.getPoint().lat();
-                var longitude = endMarker.getPoint().lng();
-                fillCoordinates(latitude, longitude, 1);
-            });
-        }
-    }
-
     function fillCoordinates(lat, lng, pos) {
         var latitude = String(lat).substring(0, 7);
         var longitude = String(lng).substring(0, 9);
         var value = latitude + "," + longitude;
         pos === 0 ? $("#start_point").val(value) : $("#end_point").val(value);
-    }
-
-    //Aumenta el zoom al mapa
-    function zoomIn() {
-        obj.zoomIn();
-        $("#contextMenu").hide();
-    }
-
-    //Disminuye el zoom al mapa
-    function zoomOut() {
-        obj.zoomOut();
-        $("#contextMenu").hide();
-    }
-
-    //Centra el mapa
-    function setCenter() {
-        obj.setCenter(point);
     }
 
     //Borra todos los overlays del mapa, es decir, la ruta,los markers, las flechas.
@@ -247,22 +210,27 @@ var Map = function() {
 
     $('#setStartPoint').live('click', function() {
         getInitialPoint();
+        $("#contextMenu").hide();
     });
 
     $('#setEndPoint').live('click', function () {
         getFinalPoint();
+        $("#contextMenu").hide();
     });
 
+    //Aumenta el zoom al mapa
     $('#zoomIn').live('click', function () {
-        zoomIn();
+        obj.zoomIn();
+        $("#contextMenu").hide();
     });
 
     $('#zoomOut').live('click', function () {
-        zoomOut();
+        obj.zoomOut();
+        $("#contextMenu").hide();
     });
 
     $('#centerMap').live('click', function () {
-        setCenter();
+        obj.setCenter(point);
     });
 
     $('#clearMarkers').live('click', function () {
@@ -281,8 +249,9 @@ var Map = function() {
     //Metodo que hace la llamada asincrona al controlador, pasando los parametros
     //correspondientes y evaluando la respuesta dada por este
     function findRoute() {
-        var startLatLng = $("#start_point").val();
-        var endLatLng = $("#end_point").val();
+
+        var startLatLng = startMarker.getPoint().lat() + "," + startMarker.getPoint().lng();
+        var endLatLng = endMarker.getPoint().lat() + "," + endMarker.getPoint().lng();
         var q = "?start_point=" + startLatLng + "&end_point=" + endLatLng;
         var request = GXmlHttp.create();
 
@@ -299,8 +268,8 @@ var Map = function() {
                     var busRoute = res.bus;
                     var busExplain = res.bus_explain;
                     var routeExplain = res.route_explain;
-
                     clearExistingOverlays();
+
                 } catch (e) {
                     success = false;
                 }
@@ -322,6 +291,14 @@ var Map = function() {
         };
         request.send(null);
         return false;
+    }
+
+    function randomColor() {
+        var color = '#' + Math.floor(Math.random() * 16777215).toString(16);
+        while(color.length <= 6) {
+            color = '#' + Math.floor(Math.random() * 16777215).toString(16);
+        }
+        return color;
     }
 
     //Se eliminar los overlays existentes, en caso tal se haga otro llamado al controlador
